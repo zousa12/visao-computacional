@@ -58,9 +58,9 @@ A primeira versão pode guardar o progresso em memória durante a sessão. Se o 
 - Validar as transformações geométricas com base na matriz resultante e nas dimensões esperadas. Isso permite distinguir erros de cálculo de pequenas diferenças na imagem causadas pelo redimensionamento.
 - Comparar as cores recuperadas com a referência usando uma tolerância numérica e remontar a imagem quando os quatro desafios forem concluídos.
 
-## Executar a tela inicial
+## Executar a aplicação
 
-Com Python 3.11 ou superior, execute na raiz do repositório pelo PowerShell:
+Com Python 3.12, execute na raiz do repositório pelo PowerShell:
 
 ```powershell
 python -m venv .venv
@@ -68,15 +68,15 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-Abra [a aplicação local](http://localhost:8501). A versão atual apresenta a tela inicial e os quatro desafios. O [quadro do projeto](https://github.com/users/zousa12/projects/2) acompanha as próximas etapas.
+Abra [a aplicação local](http://localhost:8501). A versão atual permite visualizar a imagem de exemplo ou enviar um PNG ou JPEG de pelo menos 2 × 2 pixels. A prévia usa a orientação do arquivo e os canais RGB. O [quadro do projeto](https://github.com/users/zousa12/projects/2) acompanha as próximas etapas.
 
-## Execução prevista com Docker
+## Executar com Docker
 
-Após a implementação da aplicação e do `Dockerfile`, execute na pasta do projeto:
+Com o Docker em execução, rode na raiz do repositório:
 
 ```sh
 docker build -t software-educacional .
-docker run --rm -p 8501:8501 software-educacional
+docker run --rm -p 127.0.0.1:8501:8501 software-educacional
 ```
 
 Abra `http://localhost:8501` no navegador.

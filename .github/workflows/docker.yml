@@ -1,0 +1,23 @@
+name: Verificar Docker
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Construir e verificar dependências
+        run: docker build --tag software-educacional .
+      - name: Verificar a inicialização da aplicação
+        run: |
+          docker run --detach --name software-educacional --publish 127.0.0.1:8501:8501 software-educacional
+          curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 1 --max-time 5 http://127.0.0.1:8501/_stcore/health
+      - name: Mostrar logs se o teste falhar
+        if: failure()
+        run: docker logs software-educacional || true
