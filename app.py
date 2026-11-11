@@ -1,6 +1,6 @@
 import streamlit as st
 
-from image_input import example_image, load_image
+from image_input import example_image, load_image, split_quadrants
 
 
 st.set_page_config(page_title="Visão Computacional")
@@ -30,6 +30,14 @@ else:
 
 if image is not None:
     st.image(image, caption=f"Prévia · {image.width} × {image.height} px", width=480)
+
+    st.subheader("Quadrantes da imagem")
+    quadrants = split_quadrants(image)
+    labels = ("1. Frente Esquerdo", "2. Frente Direito", "3. Trás Esquerdo", "4. Trás Direito")
+    columns = st.columns(2) + st.columns(2)
+    for column, label, quadrant in zip(columns, labels, quadrants, strict=True):
+        width, height = quadrant.size
+        column.image(quadrant, caption=f"{label} · {width} × {height} px")
 
 st.header("Os quatro desafios")
 st.markdown(
