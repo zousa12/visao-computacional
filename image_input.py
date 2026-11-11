@@ -14,6 +14,22 @@ def load_image(data: bytes) -> Image.Image:
         raise ValueError("Não foi possível abrir a imagem. Envie um PNG ou JPEG válido.") from error
 
 
+def split_quadrants(
+    image: Image.Image,
+) -> tuple[Image.Image, Image.Image, Image.Image, Image.Image]:
+    """Return the reference crops in reading order from an image at least 2 × 2."""
+    width, height = image.size
+    middle_x, middle_y = width // 2, height // 2
+
+    # The right and bottom crops include the extra column or row for odd sizes.
+    return (
+        image.crop((0, 0, middle_x, middle_y)),
+        image.crop((middle_x, 0, width, middle_y)),
+        image.crop((0, middle_y, middle_x, height)),
+        image.crop((middle_x, middle_y, width, height)),
+    )
+
+
 def example_image() -> Image.Image:
     image = Image.new("RGB", (480, 320), "#e0f2fe")
     drawing = ImageDraw.Draw(image)
