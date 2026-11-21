@@ -197,6 +197,37 @@ recebem um erro tratado. Os campos aceitam números sem executar código.
    fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
    para **Done**, se necessário.
 
+## Interface integrada dos quatro desafios
+
+A aplicação usa uma grade 2×2: Q1 e Q2 na primeira linha, Q3 e Q4 na segunda.
+Cada painel reúne sua imagem alterada, dimensões, enunciado, campos numéricos e
+botão de aplicação. A prévia da tentativa e o feedback aparecem dentro do mesmo
+painel. A página usa a largura disponível e as imagens se ajustam aos painéis.
+
+Os quatro formulários são independentes. Enviar uma resposta mostra o resultado
+somente do desafio escolhido, preservando os valores dos demais campos. Não há
+execução de código digitado. O Q3 permite alternar entre reflexão direta e duas
+matrizes; o Q4 usa campos 3×3. Um erro de ampliação do Q2 fica no seu painel,
+com a referência visível, permitindo continuar os outros desafios.
+
+A interface está em `challenge_ui.py`; `app.py` cuida da escolha da imagem e
+as operações matemáticas continuam em `transformations.py`. A prévia é da
+tentativa enviada; a persistência do progresso e a recomposição final pertencem
+à etapa seguinte de progresso do projeto.
+
+### Aceite e encerramento da issue 8
+
+1. Execute `python -m unittest discover -v` com as dependências instaladas ou
+   construa a imagem Docker, que executa todos os testes.
+2. Confira a ordem da grade e se cada painel contém imagem, enunciado e campos.
+3. Aplique as respostas corretas de Q1–Q4 descritas acima, um desafio por vez.
+   Confira que a prévia e o feedback aparecem no painel correspondente.
+4. Teste respostas incorretas e inválidas e confirme que os demais formulários
+   continuam disponíveis. Troque a origem da imagem e confira a interface.
+5. Revise o PR e os checks; faça merge na `main`. A referência `Closes #8`
+   fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
+   para **Done**, se necessário.
+
 ## Executar com Docker
 
 Com o Docker em execução, rode na raiz do repositório:
