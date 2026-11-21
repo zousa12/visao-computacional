@@ -8,18 +8,24 @@ from PIL import Image
 
 ROTATION_180 = -np.eye(2)
 HORIZONTAL_REFLECTION = np.diag([-1.0, 1.0])
+MATRIX_ATOL = 1e-8
+SCALE_ATOL = 1e-6
+RGB_ATOL = 1e-6
 
 
-def validate_matrix(matrix: object) -> np.ndarray:
-    """Return a finite, invertible 2 x 2 matrix supplied by the student."""
+def validate_matrix(matrix: object, size: int = 2) -> np.ndarray:
+    """Return a finite, invertible square matrix supplied by the student."""
     try:
+        if np.iscomplexobj(matrix):
+            raise ValueError("A matriz deve conter apenas números reais.")
         values = np.asarray(matrix, dtype=float)
-    except (TypeError, ValueError) as error:
-        raise ValueError("Informe uma matriz 2 x 2 com valores numéricos.") from error
-    if values.shape != (2, 2) or not np.isfinite(values).all():
-        raise ValueError("Informe uma matriz 2 x 2 com valores numéricos finitos.")
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError(f"Informe uma matriz {size} x {size} com valores numéricos reais.") from error
+    if values.shape != (size, size) or not np.isfinite(values).all():
+        raise ValueError(f"Informe uma matriz {size} x {size} com valores numéricos finitos.")
     try:
-        inverse = np.linalg.inv(values)
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            inverse = np.linalg.inv(values)
     except np.linalg.LinAlgError as error:
         raise ValueError("A matriz é singular. Use um determinante diferente de zero.") from error
     if not np.isfinite(inverse).all():
@@ -37,7 +43,10 @@ def apply_centered_matrix(image: Image.Image, matrix: object) -> Image.Image:
     screen_axes = np.diag([1.0, -1.0])
     inverse = screen_axes @ np.linalg.inv(values) @ screen_axes
     center = np.array(image.size, dtype=float) / 2
-    offset = center - inverse @ center
+    with np.errstate(over="ignore", invalid="ignore"):
+        offset = center - inverse @ center
+    if not np.isfinite(offset).all():
+        raise ValueError("A matriz produz coordenadas fora do limite numérico. Revise os coeficientes.")
     coefficients = (*inverse[0], offset[0], *inverse[1], offset[1])
     return image.transform(
         image.size, Image.Transform.AFFINE, coefficients,
@@ -53,7 +62,7 @@ def rotated_q1(reference: Image.Image) -> Image.Image:
 def is_q1_correct(matrix: object) -> bool:
     """Validate geometry even when the reference image is symmetric."""
     values = validate_matrix(matrix)
-    return bool(np.allclose(values @ ROTATION_180, np.eye(2), rtol=0, atol=1e-8))
+    return bool(np.allclose(values @ ROTATION_180, np.eye(2), rtol=0, atol=MATRIX_ATOL))
 
 
 Q2_SCALE_X = 2.0
@@ -107,7 +116,7 @@ def is_q2_correct(
     result_size = scaled_size(enlarged_size, sx, sy)
     expected = np.asarray(original_size, dtype=float) / enlarged_size
     return result_size == original_size and bool(
-        np.allclose([float(sx), float(sy)], expected, rtol=0, atol=1e-6)
+        np.allclose([float(sx), float(sy)], expected, rtol=0, atol=SCALE_ATOL)
     )
 
 
@@ -128,7 +137,7 @@ def compose_corrections(first: object, second: object) -> np.ndarray:
 def is_q3_correct(matrix: object) -> bool:
     """Validate the equivalent reflection, even for symmetric reference images."""
     values = validate_matrix(matrix)
-    return bool(np.allclose(values @ HORIZONTAL_REFLECTION, np.eye(2), rtol=0, atol=1e-8))
+    return bool(np.allclose(values @ HORIZONTAL_REFLECTION, np.eye(2), rtol=0, atol=MATRIX_ATOL))
 
 
 RGB_FILTER = np.array([[0.75, 0.25, 0.0], [0.25, 0.75, 0.0], [0.0, 0.0, 1.0]])
@@ -136,19 +145,7 @@ RGB_FILTER = np.array([[0.75, 0.25, 0.0], [0.25, 0.75, 0.0], [0.0, 0.0, 1.0]])
 
 def validate_rgb_matrix(matrix: object) -> np.ndarray:
     """Validate the student's 3 x 3 color transformation."""
-    try:
-        values = np.asarray(matrix, dtype=np.float64)
-    except (TypeError, ValueError, OverflowError) as error:
-        raise ValueError("Informe uma matriz RGB 3 x 3 com valores numéricos.") from error
-    if values.shape != (3, 3) or not np.isfinite(values).all():
-        raise ValueError("Informe uma matriz RGB 3 x 3 com valores finitos.")
-    try:
-        inverse = np.linalg.inv(values)
-    except np.linalg.LinAlgError as error:
-        raise ValueError("A matriz RGB é singular. Use um determinante diferente de zero.") from error
-    if not np.isfinite(inverse).all():
-        raise ValueError("A matriz RGB não permite uma inversão numérica válida.")
-    return values
+    return validate_matrix(matrix, size=3)
 
 
 def rgb_values(pixels: object) -> np.ndarray:
@@ -194,6 +191,6 @@ def is_q4_correct(reference: Image.Image, corrected: object, matrix: object) -> 
         composition = correction @ RGB_FILTER
     return (
         result.shape == original.shape
-        and bool(np.allclose(composition, np.eye(3), rtol=0, atol=1e-8))
-        and bool(np.allclose(result, original, rtol=0, atol=1e-6))
+        and bool(np.allclose(composition, np.eye(3), rtol=0, atol=MATRIX_ATOL))
+        and bool(np.allclose(result, original, rtol=0, atol=RGB_ATOL))
     )

@@ -2,12 +2,19 @@ import streamlit as st
 from PIL import Image
 
 from image_input import split_quadrants
+from answer_validation import AnswerFeedback, q1_feedback, q2_feedback, q3_feedback, q4_feedback
 from transformations import (
     Q2_SCALE_X, Q2_SCALE_Y, apply_centered_matrix, apply_rgb_matrix,
-    compose_corrections, enlarged_q2, filtered_q4, is_q1_correct,
-    is_q2_correct, is_q3_correct, is_q4_correct, mirrored_q3,
+    compose_corrections, enlarged_q2, filtered_q4, mirrored_q3,
     rgb_preview, rotated_q1, scale_image,
 )
+
+
+def show_feedback(feedback: AnswerFeedback) -> None:
+    if feedback.correct:
+        st.success(feedback.message)
+    else:
+        st.warning(feedback.message)
 
 
 def matrix_inputs(label: str, key: str, size: int = 2) -> list[list[float]]:
@@ -50,12 +57,9 @@ def render_q1(reference: Image.Image) -> None:
             matrix = [[a, b], [c, d]]
             result = apply_centered_matrix(altered, matrix)
             st.image(result, caption="Resultado da sua tentativa — Q1")
-            if is_q1_correct(matrix):
-                st.success("Correto! A matriz restaurou a orientação original do Q1.")
-            else:
-                st.warning("A orientação ainda não foi restaurada. Revise os sinais e tente novamente.")
+            show_feedback(q1_feedback(matrix))
         except ValueError as error:
-            st.error(str(error))
+            st.error(f"Q1: {error}")
 
 
 def render_q2(reference: Image.Image) -> None:
@@ -98,12 +102,9 @@ def render_q2(reference: Image.Image) -> None:
             try:
                 result = scale_image(q2_image, sx, sy)
                 st.image(result, caption=f"Resultado Q2 — {result.width} × {result.height} px")
-                if is_q2_correct(reference.size, q2_image.size, sx, sy):
-                    st.success("Correto! A escala inversa recuperou a largura e a altura originais do Q2.")
-                else:
-                    st.warning("O tamanho ou os fatores ainda estão incorretos. Calcule a escala inversa de cada eixo.")
+                show_feedback(q2_feedback(reference.size, q2_image.size, sx, sy))
             except ValueError as error:
-                st.error(str(error))
+                st.error(f"Q2: {error}")
 
 
 def render_q3(reference: Image.Image) -> None:
@@ -137,12 +138,9 @@ def render_q3(reference: Image.Image) -> None:
             )
             result = apply_centered_matrix(altered, q3_matrix)
             st.image(result, caption=f"Resultado Q3 — {result.width} × {result.height} px")
-            if is_q3_correct(q3_matrix):
-                st.success("Correto! A transformação recuperou a orientação original do Q3.")
-            else:
-                st.warning("O Q3 ainda está invertido. Revise os sinais e a composição das matrizes.")
+            show_feedback(q3_feedback(q3_matrix))
         except ValueError as error:
-            st.error(str(error))
+            st.error(f"Q3: {error}")
 
 
 def render_q4(reference: Image.Image) -> None:
@@ -168,12 +166,9 @@ def render_q4(reference: Image.Image) -> None:
             result = apply_rgb_matrix(q4_pixels, q4_matrix)
             preview = rgb_preview(result)
             st.image(preview, caption=f"Resultado Q4 — {preview.width} × {preview.height} px")
-            if is_q4_correct(reference, result, q4_matrix):
-                st.success("Correto! A matriz inversa recuperou os valores RGB originais do Q4.")
-            else:
-                st.warning("As cores do Q4 ainda não foram recuperadas. Revise a inversa da matriz RGB.")
+            show_feedback(q4_feedback(reference, result, q4_matrix))
         except ValueError as error:
-            st.error(str(error))
+            st.error(f"Q4: {error}")
 
 
 def render_challenges(image: Image.Image) -> None:
