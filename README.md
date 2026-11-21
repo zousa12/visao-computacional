@@ -10,7 +10,7 @@ Com o Docker em execução, abra um terminal na raiz deste repositório:
 
 ```sh
 docker build -t software-educacional .
-docker run --rm -p 127.0.0.1:8501:8501 software-educacional
+docker run --rm -p 127.0.0.1:8501:8501 --mount type=volume,source=visao-historico,target=/app/data software-educacional
 ```
 
 Abra [http://localhost:8501](http://localhost:8501). O Streamlit escuta em
@@ -129,8 +129,33 @@ incorreta ou inválida atualiza a mensagem, preservando o último acerto salvo.
 Trocar imagem, dimensões ou origem reinicia progresso e campos. Uploads também
 consideram nome e conteúdo do arquivo. Upload inválido ou removido limpa o
 progresso anterior. Cada sessão tem seu próprio estado em memória; fechar a
-sessão ou reiniciar a aplicação pode descartá-lo. Histórico entre sessões é o
-escopo opcional da [issue 13](https://github.com/zousa12/visao-computacional/issues/13).
+sessão ou reiniciar a aplicação pode descartá-lo. O histórico de tentativas permanece no SQLite, conforme descrito abaixo.
+
+## Histórico persistente com SQLite
+
+Abra **Histórico de tentativas** abaixo dos desafios para consultar as últimas
+100 tentativas, de todas as imagens ou apenas da imagem atual. Os horários são
+exibidos em Brasília. Cada envio registra identificadores do evento e exercício,
+data UTC, hash da imagem e dimensões, quadrante, valores enviados, resultado
+(correta, incorreta ou inválida), feedback, dimensões do resultado e total de acertos.
+Não são armazenados pixels nem nomes de arquivos. Reexibir a página não duplica registros.
+
+O histórico é compartilhado por todas as sessões desta instalação; não há contas
+ou separação por aluno. Ele permite consultar exercícios anteriores após reiniciar,
+mas não restaura imagens, campos ou o progresso do exercício em andamento.
+
+No Python local, o banco fica em `data/history.sqlite3`. Para alterar o caminho,
+defina `HISTORY_DB_PATH` antes de iniciar a aplicação. O diretório é criado
+automaticamente e precisa permitir escrita. Não versione o banco.
+
+O comando Docker acima usa o volume `visao-historico`, que preserva o banco ao
+encerrar, remover ou recriar o contêiner. Use o mesmo volume nas próximas execuções.
+Sem esse volume, remover o contêiner também remove seu banco. Para backup, pare
+a aplicação e copie o arquivo SQLite (ou use a API de backup do SQLite).
+
+Se a gravação falhar, os desafios continuam funcionando e a interface avisa.
+As tentativas ficam pendentes na sessão e são reenviadas na próxima interação,
+sem duplicação. Fechar a sessão antes de recuperar a gravação perde essas pendências.
 
 ## Testes e validação do fluxo completo
 
@@ -155,12 +180,13 @@ docker run --rm software-educacional python -m unittest test_flow -v
 | --- | --- |
 | Leitura de arquivos | PNG/JPEG, EXIF, RGB, tons de cinza, RGBA, formatos inválidos, truncamento e tamanho mínimo. |
 | Transformações | Respostas corretas, incorretas, equivalentes, tolerâncias e valores extremos. |
+| Histórico SQLite | Metadados, respostas, filtros, deduplicação, rollback, falha/reenvio e reinício de processo/sessão/contêiner. |
 | Fluxo completo | Upload pelo widget real da aplicação, correções de Q1–Q4, feedback, progresso e recomposição. |
 | Troca de imagem | Novos pixels, nome de arquivo, origem, upload inválido/pequeno e remoção do arquivo. |
 | Recomposição | Dimensões pares/ímpares, posições, preservação de pixels e resultado real da escala. |
 
 O GitHub Actions constrói a imagem e executa a suíte completa durante a construção.
-Depois executa `test_flow` em um contêiner novo, inicia outro contêiner com a
+Depois executa `test_flow` em um contêiner novo, verifica o histórico entre dois contêineres com o mesmo volume, inicia outro contêiner com a
 aplicação e verifica `http://127.0.0.1:8501/_stcore/health`. Os fluxos de interface
 usam Streamlit AppTest; a verificação HTTP confirma a inicialização do serviço.
 
@@ -175,7 +201,9 @@ usam Streamlit AppTest; a verificação HTTP confirma a inicialização do servi
    dimensões e as posições dos quadrantes na imagem final.
 5. Troque o arquivo, envie um arquivo inválido/pequeno e remova o upload. Confira
    o reinício do progresso e a recuperação após enviar um arquivo válido.
-6. Revise o PR e os checks. O merge na `main` com `Closes #12` encerra a issue 12;
+6. Envie tentativas e consulte o histórico. Reinicie o contêiner com o mesmo volume
+   e confira que os registros continuam disponíveis e o exercício começa vazio.
+7. Revise o PR e os checks. O merge na `main` com `Closes #13` encerra a issue 13;
    confirme o estado **Closed** e o item **Done** no quadro, se necessário.
 
 ## Organização do código
@@ -188,6 +216,8 @@ usam Streamlit AppTest; a verificação HTTP confirma a inicialização do servi
 | `answer_validation.py` | Aceite e feedback contextual das respostas. |
 | `challenge_ui.py` | Grade 2×2, formulários, prévias e barra de progresso. |
 | `session_progress.py` | Tentativas, acertos, reinício do estado e recomposição. |
+| `history_store.py` | Banco SQLite, transações e consultas de tentativas. |
+| `history_ui.py` | Gravação com reenvio e consulta do histórico. |
 | `test_*.py` | Testes unitários e de interface. |
 
 O [backlog](BACKLOG.md) descreve as etapas e o

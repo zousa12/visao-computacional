@@ -16,6 +16,10 @@ jobs:
         run: docker build --tag software-educacional .
       - name: Testar fluxo completo em contêiner novo
         run: docker run --rm software-educacional python -m unittest test_flow -v
+      - name: Verificar historico entre conteineres
+        run: |
+          docker run --rm --mount type=volume,source=vision-history-ci,target=/app/data software-educacional python -c "from history_store import HistoryStore; from test_history import sample_event; HistoryStore().save_events([sample_event('restart-check')])"
+          docker run --rm --mount type=volume,source=vision-history-ci,target=/app/data software-educacional python -c "from history_store import HistoryStore; assert HistoryStore().list_attempts()[0]['event_id'] == 'restart-check'; print('Historico preservado em outro conteiner')"
       - name: Verificar a inicialização da aplicação
         run: |
           docker run --detach --name software-educacional --publish 127.0.0.1:8501:8501 software-educacional

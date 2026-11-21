@@ -4,6 +4,7 @@ import importlib.util
 from io import BytesIO
 from pathlib import Path
 import unittest
+from test_support import IsolatedHistoryTestCase
 
 import numpy as np
 from PIL import Image
@@ -28,7 +29,7 @@ def fixture_file(format: str = "PNG", *, size=(11, 7), orientation=None, seed=12
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class CompleteFlowTests(unittest.TestCase):
+class CompleteFlowTests(IsolatedHistoryTestCase):
     def start_upload(self, fixture):
         from streamlit.testing.v1 import AppTest
 

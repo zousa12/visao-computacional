@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from test_support import IsolatedHistoryTestCase
 
 
 def descendants(node):
@@ -10,7 +11,7 @@ def descendants(node):
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class ChallengeLayoutTests(unittest.TestCase):
+class ChallengeLayoutTests(IsolatedHistoryTestCase):
     def columns(self, app):
         rows = [
             node for node in app.main.children.values()

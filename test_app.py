@@ -1,10 +1,11 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from test_support import IsolatedHistoryTestCase
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class Q1InterfaceTests(unittest.TestCase):
+class Q1InterfaceTests(IsolatedHistoryTestCase):
     def test_attempts_and_image_source_change(self):
         from streamlit.testing.v1 import AppTest
 
@@ -34,7 +35,7 @@ class Q1InterfaceTests(unittest.TestCase):
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class Q2InterfaceTests(unittest.TestCase):
+class Q2InterfaceTests(IsolatedHistoryTestCase):
     def test_q2_attempts_validation_and_q1_regression(self):
         from streamlit.testing.v1 import AppTest
 
@@ -71,7 +72,7 @@ class Q2InterfaceTests(unittest.TestCase):
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class Q3InterfaceTests(unittest.TestCase):
+class Q3InterfaceTests(IsolatedHistoryTestCase):
     def test_direct_composed_and_invalid_attempts_are_independent(self):
         from streamlit.testing.v1 import AppTest
 
@@ -114,7 +115,7 @@ class Q3InterfaceTests(unittest.TestCase):
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class Q4InterfaceTests(unittest.TestCase):
+class Q4InterfaceTests(IsolatedHistoryTestCase):
     def test_correct_wrong_and_singular_rgb_matrices(self):
         from streamlit.testing.v1 import AppTest
 
@@ -150,7 +151,7 @@ class Q4InterfaceTests(unittest.TestCase):
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class FeedbackInterfaceTests(unittest.TestCase):
+class FeedbackInterfaceTests(IsolatedHistoryTestCase):
     def test_contextual_guidance_and_extreme_values_do_not_crash(self):
         from streamlit.testing.v1 import AppTest
 

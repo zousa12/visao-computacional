@@ -1,12 +1,13 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from test_support import IsolatedHistoryTestCase
 
 from session_progress import PROGRESS_KEY
 
 
 @unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
-class SessionInterfaceTests(unittest.TestCase):
+class SessionInterfaceTests(IsolatedHistoryTestCase):
     def test_four_corrections_survive_reruns_and_reconstruct_only_at_the_end(self):
         from streamlit.testing.v1 import AppTest
 
