@@ -204,16 +204,16 @@ Cada painel reúne sua imagem alterada, dimensões, enunciado, campos numéricos
 botão de aplicação. A prévia da tentativa e o feedback aparecem dentro do mesmo
 painel. A página usa a largura disponível e as imagens se ajustam aos painéis.
 
-Os quatro formulários são independentes. Enviar uma resposta mostra o resultado
-somente do desafio escolhido, preservando os valores dos demais campos. Não há
+Os quatro formulários são independentes. Enviar uma resposta atualiza o resultado
+somente do desafio escolhido, preservando tentativas e valores dos demais campos. Não há
 execução de código digitado. O Q3 permite alternar entre reflexão direta e duas
 matrizes; o Q4 usa campos 3×3. Um erro de ampliação do Q2 fica no seu painel,
 com a referência visível, permitindo continuar os outros desafios.
 
 A interface está em `challenge_ui.py`; `app.py` cuida da escolha da imagem e
-as operações matemáticas continuam em `transformations.py`. A prévia é da
-tentativa enviada; a persistência do progresso e a recomposição final pertencem
-à etapa seguinte de progresso do projeto.
+as operações matemáticas continuam em `transformations.py`. A prévia de cada
+última tentativa permanece visível na sessão e as correções aceitas são usadas
+na recomposição final descrita abaixo.
 
 ### Aceite e encerramento da issue 8
 
@@ -258,6 +258,43 @@ as operações de `transformations.py`.
 3. Teste matrizes singulares e valores extremos: o erro deve ser tratado no
    painel, permitindo corrigir os campos e tentar novamente.
 4. Revise o PR e os checks; faça merge na `main`. A referência `Closes #9`
+   fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
+   para **Done**, se necessário.
+
+## Progresso da sessão e recomposição
+
+As tentativas, mensagens e prévias ficam salvas em memória na sessão Streamlit.
+Cada quadrante corrigido é marcado como concluído e a barra mostra o total de
+acertos, de 0 a 4. Interagir com outro formulário, alternar o método do Q3 ou
+atualizar a interface na mesma sessão preserva o progresso.
+
+Depois dos quatro acertos, **Imagem recomposta** aparece abaixo da grade.
+Ela usa as correções realmente calculadas, nas posições e dimensões originais,
+inclusive quando largura ou altura são ímpares. O resultado do Q2 pode manter
+pequenas diferenças de interpolação; a recomposição não o substitui pela imagem
+de referência. O Q4 é convertido para RGB de exibição somente após a correção.
+
+Uma tentativa posterior incorreta ou inválida atualiza a mensagem do painel,
+mas mantém o último acerto e a correção salva para recomposição. Alterar valores
+sem enviar o formulário não muda a tentativa registrada.
+
+Trocar a imagem, o arquivo enviado ou a origem reinicia tentativas, acertos e
+campos dos desafios. A identificação considera origem, dimensões e pixels; nos
+uploads também inclui nome e conteúdo do arquivo. Selecionar upload sem arquivo
+ou enviar um arquivo inválido limpa o progresso anterior. O progresso é próprio
+de cada sessão; não é salvo em banco de dados nem garantido após encerrar a sessão.
+
+### Aceite e encerramento da issue 10
+
+1. Execute `python -m unittest discover -v` com as dependências instaladas ou
+   construa a imagem Docker, que executa todos os testes.
+2. Corrija Q1, Q2 e Q3 individualmente. Confirme que as prévias e mensagens
+   anteriores permanecem e que a imagem recomposta ainda não aparece.
+3. Corrija Q4: a barra deve indicar 4 de 4 e a imagem recomposta deve ter as
+   dimensões originais, com todos os quadrantes nas posições correspondentes.
+4. Teste outra imagem com dimensões ímpares e confirme o reinício dos campos e
+   do progresso. Confira também a troca para upload sem arquivo ou inválido.
+5. Revise o PR e os checks; faça merge na `main`. A referência `Closes #10`
    fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
    para **Done**, se necessário.
 

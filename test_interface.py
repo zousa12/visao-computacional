@@ -52,8 +52,8 @@ class ChallengeLayoutTests(unittest.TestCase):
             self.assertEqual(len(app.exception), 0)
             for index, column in enumerate(self.columns(app)):
                 nodes = list(descendants(column))
-                self.assertEqual(sum(n.type == "success" for n in nodes), int(index == target))
-                self.assertEqual(len(column.get("image")), 2 if index == target else 1)
+                self.assertEqual(sum(n.type == "success" for n in nodes), int(index <= target))
+                self.assertEqual(len(column.get("image")), 2 if index <= target else 1)
 
     def test_q2_error_is_local_to_its_panel(self):
         from streamlit.testing.v1 import AppTest

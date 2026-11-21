@@ -3,6 +3,7 @@ from PIL import Image
 
 from image_input import split_quadrants
 from answer_validation import AnswerFeedback, q1_feedback, q2_feedback, q3_feedback, q4_feedback
+from session_progress import SessionProgress, ensure_progress
 from transformations import (
     Q2_SCALE_X, Q2_SCALE_Y, apply_centered_matrix, apply_rgb_matrix,
     compose_corrections, enlarged_q2, filtered_q4, mirrored_q3,
@@ -15,6 +16,20 @@ def show_feedback(feedback: AnswerFeedback) -> None:
         st.success(feedback.message)
     else:
         st.warning(feedback.message)
+
+
+def show_attempt(progress: SessionProgress, quadrant: int) -> None:
+    attempt = progress.attempts.get(quadrant)
+    if attempt is not None:
+        if attempt.preview is not None:
+            width, height = attempt.preview.size
+            st.image(attempt.preview, caption=f"Resultado Q{quadrant} — {width} × {height} px")
+        if attempt.error is not None:
+            st.error(attempt.error)
+        elif attempt.feedback is not None:
+            show_feedback(attempt.feedback)
+    if quadrant in progress.corrected:
+        st.caption(f"Q{quadrant} concluído — correção salva nesta sessão.")
 
 
 def matrix_inputs(label: str, key: str, size: int = 2) -> list[list[float]]:
@@ -34,7 +49,7 @@ def matrix_inputs(label: str, key: str, size: int = 2) -> list[list[float]]:
     return matrix
 
 
-def render_q1(reference: Image.Image) -> None:
+def render_q1(reference: Image.Image, progress: SessionProgress) -> None:
     st.subheader("Q1 — Corrija a rotação de 180°")
     altered = rotated_q1(reference)
     st.image(altered, caption=f"1. Frente Esquerdo - {altered.width} x {altered.height} px", width="stretch")
@@ -46,23 +61,23 @@ def render_q1(reference: Image.Image) -> None:
     st.caption("A prévia mantém o tamanho do quadrante; áreas fora dele são recortadas.")
     with st.form("q1_matrix"):
         first_row = st.columns(2)
-        a = first_row[0].number_input("a₁₁", value=1.0, step=0.1, format="%.6f")
-        b = first_row[1].number_input("a₁₂", value=0.0, step=0.1, format="%.6f")
+        a = first_row[0].number_input("a₁₁", value=1.0, step=0.1, format="%.6f", key="q1_00")
+        b = first_row[1].number_input("a₁₂", value=0.0, step=0.1, format="%.6f", key="q1_01")
         second_row = st.columns(2)
-        c = second_row[0].number_input("a₂₁", value=0.0, step=0.1, format="%.6f")
-        d = second_row[1].number_input("a₂₂", value=1.0, step=0.1, format="%.6f")
+        c = second_row[0].number_input("a₂₁", value=0.0, step=0.1, format="%.6f", key="q1_10")
+        d = second_row[1].number_input("a₂₂", value=1.0, step=0.1, format="%.6f", key="q1_11")
         submitted = st.form_submit_button("Aplicar matriz ao Q1")
     if submitted:
         try:
             matrix = [[a, b], [c, d]]
             result = apply_centered_matrix(altered, matrix)
-            st.image(result, caption="Resultado da sua tentativa — Q1")
-            show_feedback(q1_feedback(matrix))
+            progress.record(1, result, q1_feedback(matrix))
         except ValueError as error:
-            st.error(f"Q1: {error}")
+            progress.record_error(1, f"Q1: {error}")
+    show_attempt(progress, 1)
 
 
-def render_q2(reference: Image.Image) -> None:
+def render_q2(reference: Image.Image, progress: SessionProgress) -> None:
     st.subheader("Q2 — Recupere o tamanho com a escala inversa")
     q2_image = None
     q2_error = None
@@ -101,13 +116,13 @@ def render_q2(reference: Image.Image) -> None:
         if q2_submitted:
             try:
                 result = scale_image(q2_image, sx, sy)
-                st.image(result, caption=f"Resultado Q2 — {result.width} × {result.height} px")
-                show_feedback(q2_feedback(reference.size, q2_image.size, sx, sy))
+                progress.record(2, result, q2_feedback(reference.size, q2_image.size, sx, sy))
             except ValueError as error:
-                st.error(f"Q2: {error}")
+                progress.record_error(2, f"Q2: {error}")
+        show_attempt(progress, 2)
 
 
-def render_q3(reference: Image.Image) -> None:
+def render_q3(reference: Image.Image, progress: SessionProgress) -> None:
     st.subheader("Q3 — Desfaça o espelhamento horizontal")
     altered = mirrored_q3(reference)
     st.image(altered, caption=f"3. Trás Esquerdo - {altered.width} x {altered.height} px", width="stretch")
@@ -137,13 +152,13 @@ def render_q3(reference: Image.Image) -> None:
                 if q3_second is not None else q3_first
             )
             result = apply_centered_matrix(altered, q3_matrix)
-            st.image(result, caption=f"Resultado Q3 — {result.width} × {result.height} px")
-            show_feedback(q3_feedback(q3_matrix))
+            progress.record(3, result, q3_feedback(q3_matrix))
         except ValueError as error:
-            st.error(f"Q3: {error}")
+            progress.record_error(3, f"Q3: {error}")
+    show_attempt(progress, 3)
 
 
-def render_q4(reference: Image.Image) -> None:
+def render_q4(reference: Image.Image, progress: SessionProgress) -> None:
     st.subheader("Q4 — Recupere as cores com a matriz inversa")
     q4_pixels = filtered_q4(reference)
     st.image(rgb_preview(q4_pixels), caption=f"4. Trás Direito - {reference.width} x {reference.height} px", width="stretch")
@@ -165,14 +180,15 @@ def render_q4(reference: Image.Image) -> None:
         try:
             result = apply_rgb_matrix(q4_pixels, q4_matrix)
             preview = rgb_preview(result)
-            st.image(preview, caption=f"Resultado Q4 — {preview.width} × {preview.height} px")
-            show_feedback(q4_feedback(reference, result, q4_matrix))
+            progress.record(4, preview, q4_feedback(reference, result, q4_matrix))
         except ValueError as error:
-            st.error(f"Q4: {error}")
+            progress.record_error(4, f"Q4: {error}")
+    show_attempt(progress, 4)
 
 
-def render_challenges(image: Image.Image) -> None:
+def render_challenges(image: Image.Image, source_token: str = "") -> None:
     """Place each statement, numeric form and result in its own quadrant."""
+    progress = ensure_progress(st.session_state, image, source_token)
     quadrants = split_quadrants(image)
     renderers = (render_q1, render_q2, render_q3, render_q4)
     st.header("Os quatro desafios")
@@ -183,4 +199,10 @@ def render_challenges(image: Image.Image) -> None:
             index = row * 2 + column_index
             with column:
                 with st.container(border=True):
-                    renderers[index](quadrants[index])
+                    renderers[index](quadrants[index], progress)
+    completed = len(progress.corrected)
+    st.progress(completed / 4, text=f"{completed} de 4 quadrantes corrigidos")
+    reconstructed = progress.reconstruct()
+    if reconstructed is not None:
+        st.subheader("Imagem recomposta")
+        st.image(reconstructed, caption=f"Imagem recomposta — {reconstructed.width} × {reconstructed.height} px")
