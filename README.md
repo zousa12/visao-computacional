@@ -122,6 +122,41 @@ imagem menor. Q1 continua disponível nesse caso.
    automaticamente. Confirme o estado **Closed** e, se necessário, atualize o
    item no quadro do projeto para **Done**.
 
+## Desafio Q3 disponível
+
+O quadrante **Trás Esquerdo** aparece espelhado horizontalmente na grade 2×2,
+com as dimensões originais preservadas. Cada desafio tem seu próprio formulário,
+prévia e feedback. As respostas são exclusivamente numéricas; nenhum código
+digitado pelo aluno é executado.
+
+Em **Reflexão direta**, informe `[[-1, 0], [0, 1]]`. Em **Composição de duas
+matrizes**, informe a rotação de 180° em Z em A (`[[-1, 0], [0, -1]]`) e a
+reflexão vertical em B (`[[1, 0], [0, -1]]`). Para vetores coluna, aplica-se
+primeiro A e depois B, portanto a matriz final é `B × A`. Ambas as respostas
+restauram todos os pixels do quadrante de referência. A rotação isolada não
+corrige o espelhamento. Outras composições equivalentes também são aceitas.
+
+Clique em **Aplicar correção ao Q3** para ver o resultado. Cada tentativa parte
+do Q3 espelhado original; não modifica os outros quadrantes. A validação usa a
+matriz resultante com tolerância absoluta de `1e-8`, inclusive para imagens
+simétricas. Matrizes singulares, formatos inválidos, valores não finitos ou uma
+composição numericamente inválida geram erro. A prévia usa o mesmo quadro e as
+mesmas coordenadas centrais do Q1: X para a direita e Y para cima.
+
+### Aceite e encerramento da issue 6
+
+1. Execute `python -m unittest discover -v` com as dependências instaladas ou
+   construa a imagem Docker, que executa todos os testes.
+2. Confira a grade 2×2 e o espelhamento do Q3. Aplique a reflexão direta e,
+   em seguida, a composição descrita acima: ambas devem receber sucesso.
+3. Teste identidade, rotação isolada e matriz singular. As duas primeiras
+   devem receber orientação e a última deve gerar um erro tratado.
+4. Confirme que Q1 e Q2 continuam funcionando e que cada envio corrige apenas
+   o quadrante correspondente, sem executar texto como código.
+5. Revise o PR e os checks; faça merge na `main`. A referência `Closes #6`
+   fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
+   para **Done**, se necessário.
+
 ## Executar com Docker
 
 Com o Docker em execução, rode na raiz do repositório:
