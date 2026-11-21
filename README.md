@@ -157,6 +157,46 @@ mesmas coordenadas centrais do Q1: X para a direita e Y para cima.
    fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
    para **Done**, se necessário.
 
+## Desafio Q4 disponível
+
+O quadrante **Trás Direito** recebe o filtro RGB reversível descrito no início
+deste documento. A interface mostra a matriz aplicada e recebe os nove valores
+da matriz de correção. As linhas produzem R, G e B, nessa ordem, tratando cada
+pixel como um vetor coluna. A inversa é:
+
+```text
+ 1.5  -0.5   0
+-0.5   1.5   0
+ 0     0     1
+```
+
+Clique em **Aplicar matriz ao Q4** para visualizar a tentativa e o feedback.
+Os canais filtrados e corrigidos permanecem em `float64`, sem arredondamento ou
+limitação durante os cálculos. Apenas as prévias limitam os valores a 0–255 e
+arredondam para inteiros. A correção usa os dados filtrados originais, nunca os
+pixels arredondados da prévia, e preserva os outros quadrantes.
+
+A resposta deve desfazer o filtro (tolerância absoluta de `1e-8` na composição)
+e recuperar os canais originais (tolerância absoluta de `1e-6`, sem tolerância
+relativa). Isso evita aceitar a identidade em uma imagem preta ou com canais
+iguais. Matrizes incorretas recebem orientação; matrizes singulares, formatos
+inválidos, valores não finitos e operações que excedam os limites numéricos
+recebem um erro tratado. Os campos aceitam números sem executar código.
+
+### Aceite e encerramento da issue 7
+
+1. Execute `python -m unittest discover -v` com as dependências instaladas ou
+   construa a imagem Docker, que executa todos os testes.
+2. Confirme o filtro no Q4 da grade 2×2. Aplique a matriz inversa acima: a
+   prévia deve recuperar as cores e apresentar feedback de sucesso.
+3. Teste a identidade: deve receber orientação. Teste uma linha inteira de
+   zeros: a matriz singular deve gerar um erro tratado.
+4. Confirme que Q1, Q2 e Q3 continuam funcionando e que o Q4 preserva suas
+   dimensões e os dados originais, inclusive em imagens ímpares.
+5. Revise o PR e os checks; faça merge na `main`. A referência `Closes #7`
+   fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
+   para **Done**, se necessário.
+
 ## Executar com Docker
 
 Com o Docker em execução, rode na raiz do repositório:

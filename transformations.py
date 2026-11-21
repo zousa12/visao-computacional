@@ -129,3 +129,71 @@ def is_q3_correct(matrix: object) -> bool:
     """Validate the equivalent reflection, even for symmetric reference images."""
     values = validate_matrix(matrix)
     return bool(np.allclose(values @ HORIZONTAL_REFLECTION, np.eye(2), rtol=0, atol=1e-8))
+
+
+RGB_FILTER = np.array([[0.75, 0.25, 0.0], [0.25, 0.75, 0.0], [0.0, 0.0, 1.0]])
+
+
+def validate_rgb_matrix(matrix: object) -> np.ndarray:
+    """Validate the student's 3 x 3 color transformation."""
+    try:
+        values = np.asarray(matrix, dtype=np.float64)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("Informe uma matriz RGB 3 x 3 com valores numéricos.") from error
+    if values.shape != (3, 3) or not np.isfinite(values).all():
+        raise ValueError("Informe uma matriz RGB 3 x 3 com valores finitos.")
+    try:
+        inverse = np.linalg.inv(values)
+    except np.linalg.LinAlgError as error:
+        raise ValueError("A matriz RGB é singular. Use um determinante diferente de zero.") from error
+    if not np.isfinite(inverse).all():
+        raise ValueError("A matriz RGB não permite uma inversão numérica válida.")
+    return values
+
+
+def rgb_values(pixels: object) -> np.ndarray:
+    """Read RGB samples without clipping, rounding or mutating the input."""
+    try:
+        values = np.asarray(pixels, dtype=np.float64)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("Os pixels RGB precisam conter valores numéricos.") from error
+    if (values.ndim != 3 or values.shape[2] != 3 or min(values.shape[:2]) < 1
+            or not np.isfinite(values).all()):
+        raise ValueError("Os pixels devem formar uma imagem RGB não vazia com valores finitos.")
+    return values
+
+
+def apply_rgb_matrix(pixels: object, matrix: object) -> np.ndarray:
+    """Apply M to each RGB column vector; retain float64 values at every step."""
+    values = rgb_values(pixels)
+    correction = validate_rgb_matrix(matrix)
+    with np.errstate(over="ignore", invalid="ignore"):
+        result = values @ correction.T
+    if not np.isfinite(result).all():
+        raise ValueError("A matriz RGB produziu valores excessivos. Reduza os coeficientes.")
+    return result
+
+
+def filtered_q4(reference: Image.Image) -> np.ndarray:
+    """Keep the reversible challenge data separate from its uint8 preview."""
+    return apply_rgb_matrix(reference.convert("RGB"), RGB_FILTER)
+
+
+def rgb_preview(pixels: object) -> Image.Image:
+    """Only display conversion clamps to [0, 255] and rounds to whole channels."""
+    values = rgb_values(pixels)
+    return Image.fromarray(np.rint(np.clip(values, 0, 255)).astype(np.uint8))
+
+
+def is_q4_correct(reference: Image.Image, corrected: object, matrix: object) -> bool:
+    """Check inverse and recovered pixels, including monochromatic references."""
+    correction = validate_rgb_matrix(matrix)
+    result = rgb_values(corrected)
+    original = np.asarray(reference.convert("RGB"), dtype=np.float64)
+    with np.errstate(over="ignore", invalid="ignore"):
+        composition = correction @ RGB_FILTER
+    return (
+        result.shape == original.shape
+        and bool(np.allclose(composition, np.eye(3), rtol=0, atol=1e-8))
+        and bool(np.allclose(result, original, rtol=0, atol=1e-6))
+    )

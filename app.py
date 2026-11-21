@@ -4,21 +4,22 @@ from image_input import example_image, load_image, split_quadrants
 from transformations import apply_centered_matrix, is_q1_correct, rotated_q1
 from transformations import Q2_SCALE_X, Q2_SCALE_Y, enlarged_q2, is_q2_correct, scale_image
 from transformations import compose_corrections, is_q3_correct, mirrored_q3
+from transformations import apply_rgb_matrix, filtered_q4, is_q4_correct, rgb_preview
 
 
-def matrix_inputs(label: str, key: str) -> list[list[float]]:
+def matrix_inputs(label: str, key: str, size: int = 2) -> list[list[float]]:
     """Read numeric matrix entries without evaluating student-supplied code."""
     st.write(label)
     matrix = []
-    for row in range(2):
-        columns = st.columns(2)
+    for row in range(size):
+        columns = st.columns(size)
         matrix.append([
             columns[column].number_input(
                 f"{label} — linha {row + 1}, coluna {column + 1}",
                 value=float(row == column), step=0.1, format="%.6f",
                 key=f"{key}_{row}{column}",
             )
-            for column in range(2)
+            for column in range(size)
         ])
     return matrix
 
@@ -61,11 +62,12 @@ if image is not None:
         q2_image = enlarged_q2(quadrants[1])
     except ValueError as error:
         q2_error = str(error)
+    q4_pixels = filtered_q4(quadrants[3])
     displayed_quadrants = (
         rotated_q1(quadrants[0]),
         q2_image if q2_image is not None else quadrants[1],
         mirrored_q3(quadrants[2]),
-        quadrants[3],
+        rgb_preview(q4_pixels),
     )
     for column, label, quadrant in zip(columns, labels, displayed_quadrants, strict=True):
         width, height = quadrant.size
@@ -168,6 +170,33 @@ if image is not None:
                 st.success("Correto! A transformação recuperou a orientação original do Q3.")
             else:
                 st.warning("O Q3 ainda está invertido. Revise os sinais e a composição das matrizes.")
+        except ValueError as error:
+            st.error(str(error))
+
+    st.subheader("Q4 — Recupere as cores com a matriz inversa")
+    st.write(
+        "O quadrante Trás Direito recebeu uma mistura reversível dos canais RGB. "
+        "Cada pixel é um vetor coluna: RGB alterado = M × RGB original. "
+        "Calcule e insira a inversa de M para recuperar as cores."
+    )
+    st.latex(r"M = \begin{bmatrix}0.75 & 0.25 & 0 \\ 0.25 & 0.75 & 0 \\ 0 & 0 & 1\end{bmatrix}")
+    st.caption(
+        "As linhas da matriz produzem R, G e B, nessa ordem. Os cálculos preservam "
+        "as frações dos canais; apenas as prévias são arredondadas e limitadas a 0–255. "
+        "A tolerância dos canais recuperados é 0.000001."
+    )
+    with st.form("q4_rgb"):
+        q4_matrix = matrix_inputs("Matriz de correção RGB", "q4", size=3)
+        q4_submitted = st.form_submit_button("Aplicar matriz ao Q4")
+    if q4_submitted:
+        try:
+            result = apply_rgb_matrix(q4_pixels, q4_matrix)
+            preview = rgb_preview(result)
+            st.image(preview, caption=f"Resultado Q4 — {preview.width} × {preview.height} px")
+            if is_q4_correct(quadrants[3], result, q4_matrix):
+                st.success("Correto! A matriz inversa recuperou os valores RGB originais do Q4.")
+            else:
+                st.warning("As cores do Q4 ainda não foram recuperadas. Revise a inversa da matriz RGB.")
         except ValueError as error:
             st.error(str(error))
 
