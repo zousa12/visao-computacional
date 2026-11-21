@@ -70,6 +70,25 @@ python -m venv .venv
 
 Abra [a aplicação local](http://localhost:8501). A versão atual permite visualizar a imagem de exemplo ou enviar um PNG ou JPEG de pelo menos 2 × 2 pixels. A prévia usa a orientação do arquivo e os canais RGB. O [quadro do projeto](https://github.com/users/zousa12/projects/2) acompanha as próximas etapas.
 
+## Desafio Q1 disponível
+
+O primeiro quadrante aparece girado em 180°. Preencha os quatro campos da matriz
+2 x 2 e clique em **Aplicar matriz ao Q1** para visualizar a tentativa e receber
+feedback. A matriz `[[-1, 0], [0, -1]]` recupera a orientação original. A validação
+compara a transformação com tolerância absoluta de `1e-8`, inclusive quando a
+imagem tem simetria. Matrizes singulares ou valores não finitos recebem uma
+mensagem de erro. As tentativas sempre partem do quadrante alterado original.
+
+As coordenadas são relativas ao centro, com X para a direita e Y para cima.
+A prévia mantém as dimensões do quadrante: partes transformadas para fora do
+quadro são recortadas e áreas sem pixels de origem aparecem em preto.
+
+Para executar os testes de transformação, após instalar as dependências:
+
+```sh
+python -m unittest discover -v
+```
+
 ## Executar com Docker
 
 Com o Docker em execução, rode na raiz do repositório:
