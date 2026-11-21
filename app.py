@@ -1,6 +1,7 @@
 import streamlit as st
 
 from image_input import example_image, load_image, split_quadrants
+from transformations import apply_centered_matrix, is_q1_correct, rotated_q1
 
 
 st.set_page_config(page_title="Visão Computacional")
@@ -35,9 +36,37 @@ if image is not None:
     quadrants = split_quadrants(image)
     labels = ("1. Frente Esquerdo", "2. Frente Direito", "3. Trás Esquerdo", "4. Trás Direito")
     columns = st.columns(2) + st.columns(2)
-    for column, label, quadrant in zip(columns, labels, quadrants, strict=True):
+    displayed_quadrants = (rotated_q1(quadrants[0]), *quadrants[1:])
+    for column, label, quadrant in zip(columns, labels, displayed_quadrants, strict=True):
         width, height = quadrant.size
         column.image(quadrant, caption=f"{label} · {width} × {height} px")
+
+    st.subheader("Q1 — Corrija a rotação de 180°")
+    st.write(
+        "O primeiro quadrante foi girado em torno do centro. Insira uma matriz "
+        "2 x 2 que recupere sua orientação original. As coordenadas são relativas "
+        "ao centro, com X para a direita e Y para cima."
+    )
+    st.caption("A prévia mantém o tamanho do quadrante; áreas fora dele são recortadas.")
+    with st.form("q1_matrix"):
+        first_row = st.columns(2)
+        a = first_row[0].number_input("a₁₁", value=1.0, step=0.1, format="%.6f")
+        b = first_row[1].number_input("a₁₂", value=0.0, step=0.1, format="%.6f")
+        second_row = st.columns(2)
+        c = second_row[0].number_input("a₂₁", value=0.0, step=0.1, format="%.6f")
+        d = second_row[1].number_input("a₂₂", value=1.0, step=0.1, format="%.6f")
+        submitted = st.form_submit_button("Aplicar matriz ao Q1")
+    if submitted:
+        try:
+            matrix = [[a, b], [c, d]]
+            result = apply_centered_matrix(displayed_quadrants[0], matrix)
+            st.image(result, caption="Resultado da sua tentativa — Q1")
+            if is_q1_correct(matrix):
+                st.success("Correto! A matriz restaurou a orientação original do Q1.")
+            else:
+                st.warning("A orientação ainda não foi restaurada. Revise os sinais e tente novamente.")
+        except ValueError as error:
+            st.error(str(error))
 
 st.header("Os quatro desafios")
 st.markdown(
