@@ -149,5 +149,40 @@ class Q4InterfaceTests(unittest.TestCase):
         self.assertEqual(len(app.error), 0)
 
 
+@unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
+class FeedbackInterfaceTests(unittest.TestCase):
+    def test_contextual_guidance_and_extreme_values_do_not_crash(self):
+        from streamlit.testing.v1 import AppTest
+
+        app = AppTest.from_file(str(Path(__file__).with_name("app.py"))).run()
+        app.button[1].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertIn("esperado", app.warning[0].value)
+
+        app.number_input(key="q3_direct_00").set_value(-1.0)
+        app.number_input(key="q3_direct_11").set_value(-1.0)
+        app.button[2].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertIn("isolada", app.warning[0].value)
+
+        app.button[3].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertIn("diferença máxima", app.warning[0].value)
+
+        app.number_input[0].set_value(1e-308)
+        app.number_input[3].set_value(1e-308)
+        app.button[0].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.error), 1)
+        self.assertIn("Q1", app.error[0].value)
+
+        app.number_input[0].set_value(-1.0)
+        app.number_input[3].set_value(-1.0)
+        app.button[0].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.error), 0)
+        self.assertEqual(len(app.success), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

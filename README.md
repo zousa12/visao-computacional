@@ -228,6 +228,39 @@ tentativa enviada; a persistência do progresso e a recomposição final pertenc
    fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
    para **Done**, se necessário.
 
+## Validação e feedback das respostas
+
+As respostas válidas recebem sucesso ou orientação no painel correspondente.
+Formatos inválidos, valores não reais ou não finitos, matrizes singulares e
+coordenadas fora dos limites numéricos geram erros tratados com o nome do
+quadrante. A interface permanece disponível para uma nova tentativa.
+
+| Desafio | Validação | Orientação para resposta incorreta |
+| --- | --- | --- |
+| Q1 | Matriz resultante desfaz a rotação, tolerância absoluta `1e-8`. | Indica o eixo que ainda está alterado e orienta revisar os sinais. |
+| Q2 | Fatores inversos com tolerância absoluta `1e-6` e dimensões finais exatas. | Informa dimensões obtidas e esperadas e o eixo a revisar; distingue coincidência por arredondamento. |
+| Q3 | Reflexão ou composição equivalente, tolerância absoluta `1e-8`. | Indica o eixo incorreto ou explica a reflexão que falta após uma rotação isolada. |
+| Q4 | Composição com o filtro (`1e-8`) e canais recuperados (`1e-6`). | Mostra o maior erro RGB e a tolerância, ou alerta sobre coincidência em imagens uniformes. |
+
+Todas as comparações usam tolerância relativa zero. A escala é validada pela
+geometria, sem exigir igualdade entre pixels após interpolação. Valores
+numericamente equivalentes, incluindo resíduos de seno/cosseno e composições
+que resultem na mesma transformação, são aceitos dentro das tolerâncias.
+`answer_validation.py` reúne o feedback; as tolerâncias são compartilhadas com
+as operações de `transformations.py`.
+
+### Aceite e encerramento da issue 9
+
+1. Execute `python -m unittest discover -v` com as dependências instaladas ou
+   construa a imagem Docker, que executa todos os testes.
+2. Confira as respostas corretas e equivalentes de Q1–Q4 e as orientações para
+   respostas incorretas. No Q2, confira as dimensões e não a igualdade dos pixels.
+3. Teste matrizes singulares e valores extremos: o erro deve ser tratado no
+   painel, permitindo corrigir os campos e tentar novamente.
+4. Revise o PR e os checks; faça merge na `main`. A referência `Closes #9`
+   fecha a issue automaticamente. Confirme **Closed** e atualize o quadro
+   para **Done**, se necessário.
+
 ## Executar com Docker
 
 Com o Docker em execução, rode na raiz do repositório:
