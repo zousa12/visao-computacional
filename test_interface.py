@@ -32,7 +32,7 @@ class ChallengeLayoutTests(unittest.TestCase):
             self.assertTrue(titles[0].startswith(f"Q{index + 1}"))
             self.assertEqual(sum(n.type == "form" for n in nodes), 1)
             self.assertEqual(sum(n.type == "number_input" for n in nodes), (4, 2, 4, 9)[index])
-            self.assertEqual(sum(n.type == "imgs" for n in nodes), 1)
+            self.assertEqual(len(column.get("image")), 1)
 
         for target in range(4):
             if target == 0:
@@ -53,7 +53,7 @@ class ChallengeLayoutTests(unittest.TestCase):
             for index, column in enumerate(self.columns(app)):
                 nodes = list(descendants(column))
                 self.assertEqual(sum(n.type == "success" for n in nodes), int(index == target))
-                self.assertEqual(sum(n.type == "imgs" for n in nodes), 2 if index == target else 1)
+                self.assertEqual(len(column.get("image")), 2 if index == target else 1)
 
     def test_q2_error_is_local_to_its_panel(self):
         from streamlit.testing.v1 import AppTest
@@ -70,7 +70,7 @@ with patch("challenge_ui.enlarged_q2", side_effect=ValueError("Use uma imagem me
         for index, column in enumerate(columns):
             nodes = list(descendants(column))
             self.assertEqual(sum(n.type == "error" for n in nodes), int(index == 1))
-            self.assertEqual(sum(n.type == "imgs" for n in nodes), 1)
+            self.assertEqual(len(column.get("image")), 1)
         self.assertEqual(len(app.button), 3)
         app.number_input[0].set_value(-1.0)
         app.number_input[3].set_value(-1.0)
