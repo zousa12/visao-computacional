@@ -10,7 +10,7 @@ class Q1InterfaceTests(unittest.TestCase):
 
         app = AppTest.from_file(str(Path(__file__).with_name("app.py"))).run()
         self.assertEqual(len(app.exception), 0)
-        self.assertEqual(len(app.number_input), 10)
+        self.assertEqual(len(app.number_input), 19)
         app.button[0].click().run()
         self.assertEqual(len(app.warning), 1)
         self.assertEqual(len(app.success), 0)
@@ -89,7 +89,7 @@ class Q3InterfaceTests(unittest.TestCase):
         self.assertEqual(app.number_input(key="q2_sx").value, 1.0)
 
         app.radio(key="q3_mode").set_value("Composição de duas matrizes").run()
-        self.assertEqual(len(app.number_input), 14)
+        self.assertEqual(len(app.number_input), 23)
         app.number_input(key="q3_first_00").set_value(-1.0)
         app.number_input(key="q3_first_11").set_value(-1.0)
         app.button[2].click().run()
@@ -103,6 +103,42 @@ class Q3InterfaceTests(unittest.TestCase):
 
         app.number_input(key="q3_second_00").set_value(0.0)
         app.button[2].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.error), 1)
+        self.assertEqual(len(app.success), 0)
+
+        app.radio[0].set_value("Enviar PNG ou JPEG").run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.number_input), 0)
+        self.assertEqual(len(app.error), 0)
+
+
+@unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
+class Q4InterfaceTests(unittest.TestCase):
+    def test_correct_wrong_and_singular_rgb_matrices(self):
+        from streamlit.testing.v1 import AppTest
+
+        app = AppTest.from_file(str(Path(__file__).with_name("app.py"))).run()
+        self.assertEqual(len(app.exception), 0)
+        app.button[3].click().run()
+        self.assertEqual(len(app.warning), 1)
+        self.assertIn("Q4", app.warning[0].value)
+        self.assertEqual(len(app.success), 0)
+
+        inverse = ((1.5, -0.5, 0.0), (-0.5, 1.5, 0.0), (0.0, 0.0, 1.0))
+        for row in range(3):
+            for column in range(3):
+                app.number_input(key=f"q4_{row}{column}").set_value(inverse[row][column])
+        app.button[3].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.success), 1)
+        self.assertIn("Q4", app.success[0].value)
+        self.assertEqual(app.number_input[0].value, 1.0)
+        self.assertEqual(app.number_input(key="q2_sx").value, 1.0)
+        self.assertEqual(app.number_input(key="q3_direct_00").value, 1.0)
+
+        app.number_input(key="q4_22").set_value(0.0)
+        app.button[3].click().run()
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(len(app.error), 1)
         self.assertEqual(len(app.success), 0)
