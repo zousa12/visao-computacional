@@ -89,6 +89,39 @@ Para executar os testes de transformação, após instalar as dependências:
 python -m unittest discover -v
 ```
 
+## Desafio Q2 disponível
+
+O quadrante **Frente Direito** é ampliado sem recortar, por 2 em X e 3 em Y.
+A tela informa as dimensões originais e ampliadas em pixels e exibe a imagem
+inteira, ajustada à largura disponível no navegador.
+
+Preencha **Fator de correção em X** e **Fator de correção em Y**, depois clique
+em **Aplicar escala ao Q2**. Para o desafio atual, use `0.5` em X e `0.333333`
+em Y. A imagem de exemplo passa de 240 × 160 para 480 × 480 pixels e volta
+a 240 × 160. Cada tentativa parte da imagem ampliada, preservando a referência.
+
+A validação compara a escala inversa (tolerância absoluta de `1e-6`) e as
+dimensões recuperadas, sem exigir igualdade de pixels após interpolação bicúbica.
+As dimensões são arredondadas para pixels inteiros; com ampliação fracionária,
+os fatores inversos são calculados pelas dimensões efetivas. Zero, negativos,
+valores não finitos e resultados menores que 1 pixel são rejeitados. Para
+controlar o uso de memória, cada redimensionamento é limitado a 16 milhões de
+pixels e 16.384 pixels por lado; se a ampliação exceder esses limites, envie uma
+imagem menor. Q1 continua disponível nesse caso.
+
+### Aceite e encerramento da issue 5
+
+1. Execute `python -m unittest discover -v` com as dependências instaladas ou
+   construa a imagem Docker, que também executa todos os testes.
+2. No navegador, confirme as dimensões do Q2 e aplique `0.5` em X e `0.333333`
+   em Y. Verifique a prévia de 240 × 160 pixels e o feedback de sucesso.
+3. Teste uma resposta incorreta e fatores zero ou negativos: devem gerar
+   orientação, sem interromper a aplicação. Confira também a correção do Q1.
+4. Revise o PR vinculado à issue 5 e confirme que a verificação Docker passou.
+5. Faça o merge do PR na `main`. A referência `Closes #5` encerra a issue
+   automaticamente. Confirme o estado **Closed** e, se necessário, atualize o
+   item no quadro do projeto para **Done**.
+
 ## Executar com Docker
 
 Com o Docker em execução, rode na raiz do repositório:
