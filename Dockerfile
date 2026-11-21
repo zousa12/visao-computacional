@@ -5,8 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt && python -m pip check
 
-COPY app.py challenge_ui.py answer_validation.py image_input.py transformations.py ./
-COPY test_transformations.py test_scaling.py test_mirroring.py test_rgb.py test_feedback.py test_app.py test_interface.py ./
+COPY app.py challenge_ui.py answer_validation.py session_progress.py image_input.py transformations.py ./
+COPY test_transformations.py test_scaling.py test_mirroring.py test_rgb.py test_feedback.py test_progress.py test_app.py test_interface.py test_session_ui.py ./
 RUN python -m unittest discover -v
 
 EXPOSE 8501

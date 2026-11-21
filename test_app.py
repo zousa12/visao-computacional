@@ -163,11 +163,11 @@ class FeedbackInterfaceTests(unittest.TestCase):
         app.number_input(key="q3_direct_11").set_value(-1.0)
         app.button[2].click().run()
         self.assertEqual(len(app.exception), 0)
-        self.assertIn("isolada", app.warning[0].value)
+        self.assertTrue(any("isolada" in warning.value for warning in app.warning))
 
         app.button[3].click().run()
         self.assertEqual(len(app.exception), 0)
-        self.assertIn("diferença máxima", app.warning[0].value)
+        self.assertTrue(any("diferença máxima" in warning.value for warning in app.warning))
 
         app.number_input[0].set_value(1e-308)
         app.number_input[3].set_value(1e-308)
