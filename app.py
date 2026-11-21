@@ -4,7 +4,8 @@ import streamlit as st
 
 from challenge_ui import render_challenges
 from image_input import example_image, load_image
-from session_progress import clear_progress
+from session_progress import clear_progress, PROGRESS_KEY
+from history_ui import render_history
 
 
 st.set_page_config(page_title="Visão Computacional", layout="wide")
@@ -40,3 +41,5 @@ if image is not None:
     render_challenges(image, image_token)
 else:
     clear_progress(st.session_state)
+
+render_history(st.session_state.get(PROGRESS_KEY))

@@ -71,9 +71,9 @@ def render_q1(reference: Image.Image, progress: SessionProgress) -> None:
         try:
             matrix = [[a, b], [c, d]]
             result = apply_centered_matrix(altered, matrix)
-            progress.record(1, result, q1_feedback(matrix))
+            progress.record(1, result, q1_feedback(matrix), {"matrix": matrix})
         except ValueError as error:
-            progress.record_error(1, f"Q1: {error}")
+            progress.record_error(1, f"Q1: {error}", {"matrix": matrix})
     show_attempt(progress, 1)
 
 
@@ -116,9 +116,10 @@ def render_q2(reference: Image.Image, progress: SessionProgress) -> None:
         if q2_submitted:
             try:
                 result = scale_image(q2_image, sx, sy)
-                progress.record(2, result, q2_feedback(reference.size, q2_image.size, sx, sy))
+                progress.record(2, result, q2_feedback(reference.size, q2_image.size, sx, sy),
+                                {"scale_x": sx, "scale_y": sy})
             except ValueError as error:
-                progress.record_error(2, f"Q2: {error}")
+                progress.record_error(2, f"Q2: {error}", {"scale_x": sx, "scale_y": sy})
         show_attempt(progress, 2)
 
 
@@ -146,15 +147,16 @@ def render_q3(reference: Image.Image, progress: SessionProgress) -> None:
             q3_second = matrix_inputs("B — reflexão vertical", "q3_second")
         q3_submitted = st.form_submit_button("Aplicar correção ao Q3")
     if q3_submitted:
+        answer = {"method": q3_mode, "first": q3_first, "second": q3_second}
         try:
             q3_matrix = (
                 compose_corrections(q3_first, q3_second)
                 if q3_second is not None else q3_first
             )
             result = apply_centered_matrix(altered, q3_matrix)
-            progress.record(3, result, q3_feedback(q3_matrix))
+            progress.record(3, result, q3_feedback(q3_matrix), answer)
         except ValueError as error:
-            progress.record_error(3, f"Q3: {error}")
+            progress.record_error(3, f"Q3: {error}", answer)
     show_attempt(progress, 3)
 
 
@@ -180,9 +182,9 @@ def render_q4(reference: Image.Image, progress: SessionProgress) -> None:
         try:
             result = apply_rgb_matrix(q4_pixels, q4_matrix)
             preview = rgb_preview(result)
-            progress.record(4, preview, q4_feedback(reference, result, q4_matrix))
+            progress.record(4, preview, q4_feedback(reference, result, q4_matrix), {"matrix": q4_matrix})
         except ValueError as error:
-            progress.record_error(4, f"Q4: {error}")
+            progress.record_error(4, f"Q4: {error}", {"matrix": q4_matrix})
     show_attempt(progress, 4)
 
 

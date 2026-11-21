@@ -3,6 +3,8 @@
 from collections.abc import MutableMapping
 from dataclasses import dataclass, field
 import hashlib
+from uuid import uuid4
+from history_store import HistoryEvent
 
 from PIL import Image
 
@@ -27,6 +29,9 @@ class SessionProgress:
     attempts: dict[int, Attempt] = field(default_factory=dict)
     corrected: dict[int, Image.Image] = field(default_factory=dict)
 
+    run_id: str = field(default_factory=lambda: str(uuid4()))
+    pending_events: list[HistoryEvent] = field(default_factory=list)
+
     def expected_size(self, quadrant: int) -> tuple[int, int]:
         if quadrant not in (1, 2, 3, 4):
             raise ValueError("O quadrante deve ser de 1 a 4.")
@@ -35,7 +40,7 @@ class SessionProgress:
         return (left if quadrant in (1, 3) else width - left,
                 top if quadrant in (1, 2) else height - top)
 
-    def record(self, quadrant: int, preview: Image.Image, feedback: AnswerFeedback) -> None:
+    def record(self, quadrant: int, preview: Image.Image, feedback: AnswerFeedback, answer=None) -> None:
         expected = self.expected_size(quadrant)
         if feedback.correct and preview.size != expected:
             raise ValueError("A correção aceita precisa preservar as dimensões do quadrante.")
@@ -43,9 +48,17 @@ class SessionProgress:
         if feedback.correct:
             self.corrected[quadrant] = preview.convert("RGB").copy()
 
-    def record_error(self, quadrant: int, message: str) -> None:
+        self.pending_events.append(HistoryEvent.create(
+            self.run_id, self.identity, self.size, quadrant, answer,
+            "correct" if feedback.correct else "incorrect", feedback.message,
+            preview.size, len(self.corrected)))
+
+    def record_error(self, quadrant: int, message: str, answer=None) -> None:
         self.expected_size(quadrant)
         self.attempts[quadrant] = Attempt(None, None, message)
+        self.pending_events.append(HistoryEvent.create(
+            self.run_id, self.identity, self.size, quadrant, answer,
+            "invalid", message, completed=len(self.corrected)))
 
     def reconstruct(self) -> Image.Image | None:
         if not all(quadrant in self.corrected for quadrant in range(1, 5)):
