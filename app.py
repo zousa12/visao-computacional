@@ -2,6 +2,7 @@ import streamlit as st
 
 from image_input import example_image, load_image, split_quadrants
 from transformations import apply_centered_matrix, is_q1_correct, rotated_q1
+from transformations import Q2_SCALE_X, Q2_SCALE_Y, enlarged_q2, is_q2_correct, scale_image
 
 
 st.set_page_config(page_title="Visão Computacional")
@@ -36,7 +37,17 @@ if image is not None:
     quadrants = split_quadrants(image)
     labels = ("1. Frente Esquerdo", "2. Frente Direito", "3. Trás Esquerdo", "4. Trás Direito")
     columns = st.columns(2) + st.columns(2)
-    displayed_quadrants = (rotated_q1(quadrants[0]), *quadrants[1:])
+    q2_image = None
+    q2_error = None
+    try:
+        q2_image = enlarged_q2(quadrants[1])
+    except ValueError as error:
+        q2_error = str(error)
+    displayed_quadrants = (
+        rotated_q1(quadrants[0]),
+        q2_image if q2_image is not None else quadrants[1],
+        *quadrants[2:],
+    )
     for column, label, quadrant in zip(columns, labels, displayed_quadrants, strict=True):
         width, height = quadrant.size
         column.image(quadrant, caption=f"{label} · {width} × {height} px")
@@ -67,6 +78,44 @@ if image is not None:
                 st.warning("A orientação ainda não foi restaurada. Revise os sinais e tente novamente.")
         except ValueError as error:
             st.error(str(error))
+
+    st.subheader("Q2 — Recupere o tamanho com a escala inversa")
+    if q2_image is None:
+        st.error(f"Não foi possível ampliar o Q2: {q2_error}")
+    else:
+        reference_width, reference_height = quadrants[1].size
+        st.write(
+            f"O Q2 foi ampliado {Q2_SCALE_X:g}× em X e {Q2_SCALE_Y:g}× em Y, "
+            "sem recortar. Calcule os fatores inversos para recuperar o tamanho original."
+        )
+        st.write(
+            f"Dimensões originais: {reference_width} × {reference_height} px. "
+            f"Dimensões ampliadas: {q2_image.width} × {q2_image.height} px."
+        )
+        st.caption(
+            "A imagem inteira é exibida ajustada ao espaço da tela; as dimensões em pixels "
+            "estão na legenda. Use até seis casas decimais nos fatores. "
+            "A correção é validada pela escala e pelo tamanho, independentemente da interpolação."
+        )
+        with st.form("q2_scale"):
+            scale_columns = st.columns(2)
+            sx = scale_columns[0].number_input(
+                "Fator de correção em X", value=1.0, step=0.01, format="%.6f", key="q2_sx",
+            )
+            sy = scale_columns[1].number_input(
+                "Fator de correção em Y", value=1.0, step=0.01, format="%.6f", key="q2_sy",
+            )
+            q2_submitted = st.form_submit_button("Aplicar escala ao Q2")
+        if q2_submitted:
+            try:
+                result = scale_image(q2_image, sx, sy)
+                st.image(result, caption=f"Resultado Q2 — {result.width} × {result.height} px")
+                if is_q2_correct(quadrants[1].size, q2_image.size, sx, sy):
+                    st.success("Correto! A escala inversa recuperou a largura e a altura originais do Q2.")
+                else:
+                    st.warning("O tamanho ou os fatores ainda estão incorretos. Calcule a escala inversa de cada eixo.")
+            except ValueError as error:
+                st.error(str(error))
 
 st.header("Os quatro desafios")
 st.markdown(

@@ -6,7 +6,7 @@ COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt && python -m pip check
 
 COPY app.py image_input.py transformations.py ./
-COPY test_transformations.py test_app.py ./
+COPY test_transformations.py test_scaling.py test_app.py ./
 RUN python -m unittest discover -v
 
 EXPOSE 8501

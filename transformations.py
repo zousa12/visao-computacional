@@ -1,5 +1,7 @@
 """Geometric operations independent of the Streamlit interface."""
 
+import math
+
 import numpy as np
 from PIL import Image
 
@@ -51,3 +53,58 @@ def is_q1_correct(matrix: object) -> bool:
     """Validate geometry even when the reference image is symmetric."""
     values = validate_matrix(matrix)
     return bool(np.allclose(values @ ROTATION_180, np.eye(2), rtol=0, atol=1e-8))
+
+
+Q2_SCALE_X = 2.0
+Q2_SCALE_Y = 3.0
+MAX_SCALED_PIXELS = 16_000_000
+MAX_SCALED_SIDE = 16_384
+
+
+def scaled_size(size: tuple[int, int], sx: float, sy: float) -> tuple[int, int]:
+    """Compute rounded pixel dimensions and reject invalid or excessive outputs."""
+    try:
+        factors = float(sx), float(sy)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("Informe fatores de escala numéricos, finitos e maiores que zero.") from error
+    if any(not math.isfinite(factor) or factor <= 0 for factor in factors):
+        raise ValueError("Os fatores de escala devem ser finitos e maiores que zero.")
+    dimensions = tuple(side * factor for side, factor in zip(size, factors, strict=True))
+    if any(not math.isfinite(side) or side > MAX_SCALED_SIDE for side in dimensions):
+        raise ValueError("A escala excede o limite de 16.384 pixels por lado.")
+    result = tuple(round(side) for side in dimensions)
+    if min(result) < 1:
+        raise ValueError("A escala precisa produzir pelo menos 1 pixel em cada dimensão.")
+    if result[0] * result[1] > MAX_SCALED_PIXELS:
+        raise ValueError("A escala excede o limite de 16 milhões de pixels. Use uma imagem menor.")
+    return result
+
+
+def scale_image(image: Image.Image, sx: float, sy: float) -> Image.Image:
+    """Resize the entire image without cropping; always return a new image."""
+    return image.resize(scaled_size(image.size, sx, sy), Image.Resampling.BICUBIC)
+
+
+def enlarged_q2(
+    reference: Image.Image, sx: float = Q2_SCALE_X, sy: float = Q2_SCALE_Y,
+) -> Image.Image:
+    """Create a full Q2 enlargement; non-integer factors round to whole pixels."""
+    size = scaled_size(reference.size, sx, sy)
+    if float(sx) < 1 or float(sy) < 1:
+        raise ValueError("A ampliação do desafio deve usar fatores maiores ou iguais a 1.")
+    return reference.resize(size, Image.Resampling.BICUBIC)
+
+
+def is_q2_correct(
+    original_size: tuple[int, int], enlarged_size: tuple[int, int], sx: float, sy: float,
+) -> bool:
+    """Check inverse geometry and dimensions, independently of interpolation.
+
+    Effective factors use actual pixel dimensions after rounding. A tolerance
+    of 1e-6 accepts six decimal places for recurring fractions such as 1/3.
+    """
+    result_size = scaled_size(enlarged_size, sx, sy)
+    expected = np.asarray(original_size, dtype=float) / enlarged_size
+    return result_size == original_size and bool(
+        np.allclose([float(sx), float(sy)], expected, rtol=0, atol=1e-6)
+    )
