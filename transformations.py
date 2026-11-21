@@ -7,6 +7,7 @@ from PIL import Image
 
 
 ROTATION_180 = -np.eye(2)
+HORIZONTAL_REFLECTION = np.diag([-1.0, 1.0])
 
 
 def validate_matrix(matrix: object) -> np.ndarray:
@@ -108,3 +109,23 @@ def is_q2_correct(
     return result_size == original_size and bool(
         np.allclose([float(sx), float(sy)], expected, rtol=0, atol=1e-6)
     )
+
+
+def mirrored_q3(reference: Image.Image) -> Image.Image:
+    """Mirror left/right without changing dimensions or the reference pixels."""
+    return reference.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+
+
+def compose_corrections(first: object, second: object) -> np.ndarray:
+    """For column vectors, applying A then B produces B @ A."""
+    a = validate_matrix(first)
+    b = validate_matrix(second)
+    with np.errstate(over="ignore", invalid="ignore"):
+        result = b @ a
+    return validate_matrix(result)
+
+
+def is_q3_correct(matrix: object) -> bool:
+    """Validate the equivalent reflection, even for symmetric reference images."""
+    values = validate_matrix(matrix)
+    return bool(np.allclose(values @ HORIZONTAL_REFLECTION, np.eye(2), rtol=0, atol=1e-8))

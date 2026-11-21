@@ -3,6 +3,24 @@ import streamlit as st
 from image_input import example_image, load_image, split_quadrants
 from transformations import apply_centered_matrix, is_q1_correct, rotated_q1
 from transformations import Q2_SCALE_X, Q2_SCALE_Y, enlarged_q2, is_q2_correct, scale_image
+from transformations import compose_corrections, is_q3_correct, mirrored_q3
+
+
+def matrix_inputs(label: str, key: str) -> list[list[float]]:
+    """Read numeric matrix entries without evaluating student-supplied code."""
+    st.write(label)
+    matrix = []
+    for row in range(2):
+        columns = st.columns(2)
+        matrix.append([
+            columns[column].number_input(
+                f"{label} — linha {row + 1}, coluna {column + 1}",
+                value=float(row == column), step=0.1, format="%.6f",
+                key=f"{key}_{row}{column}",
+            )
+            for column in range(2)
+        ])
+    return matrix
 
 
 st.set_page_config(page_title="Visão Computacional")
@@ -46,7 +64,8 @@ if image is not None:
     displayed_quadrants = (
         rotated_q1(quadrants[0]),
         q2_image if q2_image is not None else quadrants[1],
-        *quadrants[2:],
+        mirrored_q3(quadrants[2]),
+        quadrants[3],
     )
     for column, label, quadrant in zip(columns, labels, displayed_quadrants, strict=True):
         width, height = quadrant.size
@@ -116,6 +135,41 @@ if image is not None:
                     st.warning("O tamanho ou os fatores ainda estão incorretos. Calcule a escala inversa de cada eixo.")
             except ValueError as error:
                 st.error(str(error))
+
+    st.subheader("Q3 — Desfaça o espelhamento horizontal")
+    st.write(
+        "O quadrante Trás Esquerdo foi espelhado da esquerda para a direita. "
+        "Recupere a orientação original com uma reflexão direta ou com a composição "
+        "de uma rotação de 180° em Z seguida de uma reflexão vertical. "
+        "Use coordenadas relativas ao centro: X para a direita e Y para cima."
+    )
+    q3_mode = st.radio(
+        "Método de correção do Q3",
+        ("Reflexão direta", "Composição de duas matrizes"), key="q3_mode",
+    )
+    with st.form("q3_matrix"):
+        if q3_mode == "Reflexão direta":
+            q3_first = matrix_inputs("Matriz de correção", "q3_direct")
+            q3_second = None
+        else:
+            st.caption("Primeiro aplica-se A e depois B: a matriz resultante é B × A.")
+            q3_first = matrix_inputs("A — rotação de 180° em Z", "q3_first")
+            q3_second = matrix_inputs("B — reflexão vertical", "q3_second")
+        q3_submitted = st.form_submit_button("Aplicar correção ao Q3")
+    if q3_submitted:
+        try:
+            q3_matrix = (
+                compose_corrections(q3_first, q3_second)
+                if q3_second is not None else q3_first
+            )
+            result = apply_centered_matrix(displayed_quadrants[2], q3_matrix)
+            st.image(result, caption=f"Resultado Q3 — {result.width} × {result.height} px")
+            if is_q3_correct(q3_matrix):
+                st.success("Correto! A transformação recuperou a orientação original do Q3.")
+            else:
+                st.warning("O Q3 ainda está invertido. Revise os sinais e a composição das matrizes.")
+        except ValueError as error:
+            st.error(str(error))
 
 st.header("Os quatro desafios")
 st.markdown(

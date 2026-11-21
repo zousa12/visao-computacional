@@ -10,7 +10,7 @@ class Q1InterfaceTests(unittest.TestCase):
 
         app = AppTest.from_file(str(Path(__file__).with_name("app.py"))).run()
         self.assertEqual(len(app.exception), 0)
-        self.assertEqual(len(app.number_input), 6)
+        self.assertEqual(len(app.number_input), 10)
         app.button[0].click().run()
         self.assertEqual(len(app.warning), 1)
         self.assertEqual(len(app.success), 0)
@@ -68,6 +68,49 @@ class Q2InterfaceTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(len(app.number_input), 0)
         self.assertEqual(len(app.success), 0)
+
+
+@unittest.skipUnless(importlib.util.find_spec("streamlit"), "Streamlit não instalado")
+class Q3InterfaceTests(unittest.TestCase):
+    def test_direct_composed_and_invalid_attempts_are_independent(self):
+        from streamlit.testing.v1 import AppTest
+
+        app = AppTest.from_file(str(Path(__file__).with_name("app.py"))).run()
+        self.assertEqual(len(app.exception), 0)
+        app.button[2].click().run()
+        self.assertEqual(len(app.warning), 1)
+        self.assertEqual(len(app.success), 0)
+        app.number_input(key="q3_direct_00").set_value(-1.0)
+        app.button[2].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.success), 1)
+        self.assertIn("Q3", app.success[0].value)
+        self.assertEqual(app.number_input[0].value, 1.0)
+        self.assertEqual(app.number_input(key="q2_sx").value, 1.0)
+
+        app.radio(key="q3_mode").set_value("Composição de duas matrizes").run()
+        self.assertEqual(len(app.number_input), 14)
+        app.number_input(key="q3_first_00").set_value(-1.0)
+        app.number_input(key="q3_first_11").set_value(-1.0)
+        app.button[2].click().run()
+        self.assertEqual(len(app.success), 0)
+        self.assertEqual(len(app.warning), 1)
+        app.number_input(key="q3_second_11").set_value(-1.0)
+        app.button[2].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.success), 1)
+        self.assertIn("Q3", app.success[0].value)
+
+        app.number_input(key="q3_second_00").set_value(0.0)
+        app.button[2].click().run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.error), 1)
+        self.assertEqual(len(app.success), 0)
+
+        app.radio[0].set_value("Enviar PNG ou JPEG").run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.number_input), 0)
+        self.assertEqual(len(app.error), 0)
 
 
 if __name__ == "__main__":
